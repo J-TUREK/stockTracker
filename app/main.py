@@ -95,7 +95,24 @@ def read_stock_picks():
     return stock_picks
 
 
-def main(start_date, open=False):
+def get_top_three_metrics(df, stock_picks):
+    """
+    Get the top three stocks based on the last row of the DataFrame.
+    :param df: pd.DataFrame
+    :return: list
+    """
+    last_row = df.iloc[-1]
+    series = last_row.sort_values(ascending=False).head(3)
+    metrics = []
+    for s in series.items():
+        name = get_name(s[0], stock_picks)
+        name = f"{s[0]} ({name})"
+        percent_change = round(s[1], 1)
+        metrics.append({"name": name, "percent_change": percent_change})
+    return metrics
+
+
+def main(start_date):
     stock_picks = read_stock_picks()
     client = HistoricalDataAlpacaClient()
 
@@ -133,6 +150,8 @@ def main(start_date, open=False):
             )
         )
 
+    metrics = get_top_three_metrics(formatted_df, stock_picks)
+
     fig.update_layout(margin=dict(l=100, r=100, t=50, b=50))
 
     # Update the legend to show the name of the person who picked the stock
@@ -140,23 +159,8 @@ def main(start_date, open=False):
     # Update the legend title
     fig.update_layout(legend_title_text='Ticker')
 
-    # # Configure the plot with the desired filename for downloads
-
-    # today_date_str = datetime.today().strftime("%Y-%m-%d")
-    # from_data_to_date_str = f"{start_date}_{today_date_str}"
-    # filename = f"tickers_{from_data_to_date_str}"
-
-    # config = {
-    #     'toImageButtonOptions': {
-    #         'filename': filename,  # Specify the download name without extension
-    #         'format': 'png',  # Optional: Specify format ('png', 'jpeg', 'svg')
-    #         'scale': 2  # Optional: Increase the resolution of the image
-    #     }
-    # }
-
-    return fig, formatted_df
+    return fig, formatted_df, metrics
 
 
-if __name__ == '__main__':
-    start_date = "2024-11-04"
-    main(start_date, open=True)
+if __name__ == "__main__":
+    main("2024-11-04")
