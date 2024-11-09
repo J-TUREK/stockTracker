@@ -1,0 +1,14 @@
+[
+    {"name": "Jamie", "symbol": "MSFT", "img": "JoeyMousepad.webp"},
+    {"name": "Davis", "symbol": "COCO", "img": "Hedonismbot.webp"},
+    {"name": "Joe", "symbol": "JLL", "img": "Donbot.webp"},
+    {"name": "Jordan", "symbol": "BEAN.SW", "img": "Hypnotoad.webp"},
+    {"name": "Callum", "symbol": "TSCO", "img": "Nudar.webp"},
+    {"name": "Bogdan", "symbol": "AMZN", "img": "Fry.webp"},
+    {"name": "Ales", "symbol": "INTC", "img": "Calculon.webp"},
+    {"name": "Niamh", "symbol": "CMG", "img": "Sally.webp"},
+    {"name": "George", "symbol": "BRK.A", "img": "Morbo.webp"},
+    {"name": "SD", "symbol": "TSLA", "img": "Beelzebot.webp"},
+    {"name": "James", "symbol": "NVDA", "img": "Professor.webp"},
+    {"name": "Elior", "symbol": "PRCT", "img": "Dwight.webp"}
+]
