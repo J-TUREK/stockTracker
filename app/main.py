@@ -95,21 +95,42 @@ def read_stock_picks():
     return stock_picks
 
 
-def get_top_three_metrics(df, stock_picks):
+def get_performance_metrics(df, stock_picks):
     """
     Get the top three stocks based on the last row of the DataFrame.
     :param df: pd.DataFrame
-    :return: list
+    :param stock_picks: list
+    :return: pd.DataFrame
     """
     last_row = df.iloc[-1]
-    series = last_row.sort_values(ascending=False).head(3)
+    series = last_row.sort_values(ascending=False)
     metrics = []
+    rank = 1
     for s in series.items():
+        symbol = s[0]
         name = get_name(s[0], stock_picks)
-        name = f"{s[0]} ({name})"
         percent_change = round(s[1], 1)
-        metrics.append({"name": name, "percent_change": percent_change})
-    return metrics
+        metrics.append({"name": name, "symbol": symbol, "percent_change": percent_change})
+        rank += 1
+
+    metrics_df = pd.DataFrame(metrics)
+    metrics_df.index = metrics_df.index + 1
+    return metrics_df
+
+
+def get_proportion_of_days_passed(start_date_str, end_date_str):
+    today = datetime.now()
+    # Calculate the number of days between the start and end date
+    end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
+    days = (end_date - datetime.strptime(start_date_str, "%Y-%m-%d")).days
+    # Calculate the percentage of days that have passed since the start date
+    days_passed = (today - datetime.strptime(start_date_str, "%Y-%m-%d")).days - 1
+    percent = round(days_passed / days * 100, 1) / 100
+
+    if percent > 1:
+        percent = 1.
+
+    return days_passed, days, percent
 
 
 def main(start_date):
@@ -126,7 +147,8 @@ def main(start_date):
     formatted_df = format_response_df(data)
 
     # Show the plot
-    fig = px.line(formatted_df, title='Tabula Tickers November 2024 Comp', labels={'value': 'Percent Change (%)'})
+    fig = px.line(formatted_df, labels={'value': 'Percent Change (%)'},
+                  markers=True)
 
     # Get the x value as the last value in the index in the DataFrame
     last_x = formatted_df.index[-1]
@@ -150,16 +172,13 @@ def main(start_date):
             )
         )
 
-    metrics = get_top_three_metrics(formatted_df, stock_picks)
-
-    fig.update_layout(margin=dict(l=100, r=100, t=50, b=50))
-
     # Update the legend to show the name of the person who picked the stock
     fig.for_each_trace(lambda trace: trace.update(name=f"{trace.name} ({get_name(trace.name, stock_picks)})"))
     # Update the legend title
     fig.update_layout(legend_title_text='Ticker')
 
-    return fig, formatted_df, metrics
+    metrics_df = get_performance_metrics(formatted_df, stock_picks)
+    return fig, formatted_df, metrics_df
 
 
 if __name__ == "__main__":
