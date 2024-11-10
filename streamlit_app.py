@@ -1,10 +1,9 @@
-import datetime
 import os
 
+import streamlit as st
 from dotenv import load_dotenv
 
 from app.main import main, get_proportion_of_days_passed
-import streamlit as st
 
 # Load the environment variables
 load_dotenv()
@@ -12,8 +11,8 @@ load_dotenv()
 # Set up the page
 start_date = os.environ.get("START_DATE")
 end_date = os.environ.get("END_DATE")
-fig, data_df, metrics_df = main(start_date)
 
+fig, data_df, metrics_df = main(start_date, end_date)
 days_passed, days, percent = get_proportion_of_days_passed(start_date, end_date)
 
 # Display the page

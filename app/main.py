@@ -5,7 +5,7 @@ from datetime import datetime
 import pandas as pd
 import plotly.express as px
 from PIL import Image
-from alpaca.data import TimeFrame
+from alpaca.data import TimeFrame, TimeFrameUnit
 from alpaca.data.historical import StockHistoricalDataClient
 from alpaca.data.requests import StockBarsRequest
 
@@ -41,8 +41,6 @@ def format_response_df(data) -> pd.DataFrame:
     df = df.reset_index()
     # Convert the timestamp column to datetime
     df['timestamp'] = pd.to_datetime(df['timestamp'])
-    # Format the 'timestamp' column to only show the date
-    df['timestamp'] = df['timestamp'].dt.date
     # I now have a DataFrame with the following columns: 'symbol', 'timestamp', 'close'
     # I want to now calculate the percent change for each stock from the START_DATE
     # For each grouping, determine the 'close' on the first day, or the START_DATE
@@ -51,6 +49,8 @@ def format_response_df(data) -> pd.DataFrame:
     df['percent_change'] = (df['close'] - df['initial_close']) / df['initial_close'] * 100
     # Plot the percent change for each stock
     df = df.pivot(index='timestamp', columns='symbol', values='percent_change')
+    # Back-fill the NaN values with the previous value
+    df = df.ffill()
 
     # Based on the final row, order the columns in order of size
     last_row = df.iloc[-1]
@@ -124,7 +124,7 @@ def get_proportion_of_days_passed(start_date_str, end_date_str):
     end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
     days = (end_date - datetime.strptime(start_date_str, "%Y-%m-%d")).days
     # Calculate the percentage of days that have passed since the start date
-    days_passed = (today - datetime.strptime(start_date_str, "%Y-%m-%d")).days - 1
+    days_passed = (today - datetime.strptime(start_date_str, "%Y-%m-%d")).days
     percent = round(days_passed / days * 100, 1) / 100
 
     if percent > 1:
@@ -133,22 +133,27 @@ def get_proportion_of_days_passed(start_date_str, end_date_str):
     return days_passed, days, percent
 
 
-def main(start_date):
+def main(start_date, end_date=None):
     stock_picks = read_stock_picks()
     client = HistoricalDataAlpacaClient()
+    today = datetime.now()
+    end_date = datetime.strptime(end_date, "%Y-%m-%d")
+    if end_date >= today:
+        # You cannot query data for a future date
+        end_date = None
 
     symbols = get_stock_list(stock_picks)
     request_params = StockBarsRequest(
         symbol_or_symbols=symbols,
-        timeframe=TimeFrame.Day,
+        timeframe=TimeFrame(6, TimeFrameUnit.Hour),
         start=datetime.strptime(start_date, "%Y-%m-%d"),
+        end=end_date
     )
     data = client.client.get_stock_bars(request_params)
     formatted_df = format_response_df(data)
 
     # Show the plot
-    fig = px.line(formatted_df, labels={'value': 'Percent Change (%)'},
-                  markers=True)
+    fig = px.line(formatted_df, labels={'value': 'Percent Change (%)'}, markers=True)
 
     # Get the x value as the last value in the index in the DataFrame
     last_x = formatted_df.index[-1]
@@ -178,6 +183,8 @@ def main(start_date):
     fig.update_layout(legend_title_text='Ticker')
 
     metrics_df = get_performance_metrics(formatted_df, stock_picks)
+    # Sort the formatted_df by reverse index
+    formatted_df = formatted_df.iloc[::-1]
     return fig, formatted_df, metrics_df
 
 
